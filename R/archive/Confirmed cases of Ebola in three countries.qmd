@@ -1,0 +1,30 @@
+---
+title: "Confirmed cases of Ebola in three countries"
+format: html
+editor: visual
+---
+
+## Introduction
+
+The goal of this publication is to present the number of confirmed cases of Ebola virus infection, for Sierra Leone, Guinea and Liberia during the 2014-2015 outbreak in West Africa. The data presented is from the period between August 2014 and March 2015.
+
+## Data
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+## Results
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Conclusions

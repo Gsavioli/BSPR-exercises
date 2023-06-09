@@ -1,0 +1,63 @@
+---
+title: "Medical Data Peru Lung"
+toc: true
+toc-depth: 4
+toc-location: left
+format: 
+  html:
+    self-contained: true
+    code-fold: show
+    code-overflow: scroll
+number-sections: false
+editor: visual
+theme:
+  light: flatly
+  dark: darkly
+---
+
+## Introduction
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Data
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r, include=FALSE}
+library(tidyverse)
+library(gtsummary)
+
+perulung_ems <- read_csv("~/..WORK, EDUCATION/Bern BLV/ECVPH Residency/PHS_Summer_Course/BSPR-exercises/data/raw/perulung_ems.csv")
+
+data <- perulung_ems %>% 
+  mutate(id=as.integer(id), 
+  sex = factor(sex, levels=c(0,1), labels=c("f","m")), 
+  respsymptoms=factor(respsymptoms, levels=c(0,1), labels=c("no","yes")), 
+  asthma_hist=factor(asthma_hist))
+data
+```
+
+```{r, echo=FALSE}
+tabl_summary <- data |>   
+  select(where(is.double)) |>
+  tbl_summary(
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c("{mean} ({sd})", 
+                            "{median} ({p25}, {p75})", 
+                            "{min}, {max}")
+  )
+tabl_summary
+```
+
+## Results
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Discussion and Conclusions
