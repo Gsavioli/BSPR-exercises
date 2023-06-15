@@ -1,0 +1,173 @@
+---
+title: "BSPR Course Final Project Report: Respiratory data in Peruvian Children"
+author: Giulia Savioli
+format: html
+editor: visual
+---
+
+## Introduction
+
+A survey of was conducted among children in Peru to collect data on respiratory disease. A total of 636 children were part of the survey, and the age, sex, height, forced expiratory volume after 1 second (FEV1) were recorded. In addition, presence of respiratory symptoms (yes or no), and history of asthma (never, current asthma, or previous asthma) were also recorded. The research questions we aim to answer in this report are:
+
+1.  Is FEV1 significantly different between the male and female children in the sampled population?
+2.  Is presence of respiratory symptoms related to sex?
+3.  Is presence of respiratory symptoms related to history of asthma?
+
+## Data
+
+A total of 636 children were surveyed, 335 females and 301 males, between the ages of 7 and 10 years. The data are summarised in the table below:
+
+```{r}
+#| echo: false
+#| message: false
+library(usethis)
+library(gitcreds)
+library(here)
+library(tidyverse)
+library(medicaldata)
+library(cowplot)
+library(gtsummary)
+library(dplyr)
+
+#import data
+setwd("C:/Users/giuli/Documents/..WORK, EDUCATION/Bern BLV/ECVPH Residency/PHS_Summer_Course/BSPR-exercises")
+dat <- read.csv("data/raw/perulung_ems.csv")
+dat <- subset(dat, select = -id)
+dat <- rename(dat, "FEV1" = fev1)
+
+#want to change the categorical values (factors)
+dat$asthma_hist <- as.factor(dat$asthma_hist)
+dat$sex <- factor(as.character(dat$sex), levels=c(0,1), labels=c("f","m"))
+dat$respsymptoms <- factor(as.character(dat$respsymptoms), levels=c(0,1), labels=c("no","yes"))
+
+#make a summary table for the report
+tabl_summary <- dat |>
+  tbl_summary(
+    by = sex,
+    label = list(age ~ "Age", height ~ "Height", respsymptoms ~ "Reported respiratory symptoms", asthma_hist ~ "History of asthma"),
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c("{mean} ({sd})", 
+                                     "{median} ({p25}, {p75})", 
+                                     "{min}, {max}")
+ ) %>%
+  add_overall()
+
+tabl_summary
+```
+
+## Results
+
+Histograms and box plots are provided for the FEV1 data, for the entire sampled population and according to sex.
+
+```{r}
+#| echo: false
+#plotting the data
+p1 <- dat %>%
+  ggplot(aes(FEV1)) +
+  geom_histogram(color = "black",
+                 fill = "steelblue", 
+                 bins = 30) + 
+  theme_bw() +
+  ggtitle("Figure 1. Histogram of FEV1 measurements for the studied sample.")
+
+p1 + theme(
+  plot.title = element_text(color="black", size=14, face="bold.italic"),
+axis.title.x = element_text(color="black", size=14, face="bold"),
+axis.title.y = element_text(color="black", size=14, face="bold")
+)
+
+#new plots for fev1, separated by sex
+p2 <- dat %>%
+  ggplot(aes(FEV1)) +
+  geom_histogram(color = "black",
+                 fill = "steelblue", 
+                 bins = 30) + 
+  theme_bw() +
+  facet_grid(sex~.) +
+  ggtitle("Figure 2. Histograms of FEV1 measurements for the studied sample \naccording to sex (f = female, m = male).")
+
+p2 + theme(
+  plot.title = element_text(color="black", size=14, face="bold.italic"),
+axis.title.x = element_text(color="black", size=14, face="bold"),
+axis.title.y = element_text(color="black", size=14, face="bold"),
+legend.text = element_text(color = "black", size = 14, face = "bold")
+)
+
+#box plots
+p3 <- ggplot(dat, aes(y=FEV1, color=sex)) +
+  geom_boxplot() +
+  scale_x_discrete() +
+  ggtitle("Figure 3. Boxplots of FEV1 measurements for the studied sample \naccording to sex (f = female, m = male).")
+
+p3 + theme(
+  plot.title = element_text(color="black", size=14, face="bold.italic"),
+  axis.title.x = element_text(color="black", size=14, face="bold"),
+  axis.title.y = element_text(color="black", size=14, face="bold")
+)
+```
+
+## Statistical Testing
+
+Our first research question required us to compare continuously distributed dated, i.e. FEV1 between males and females. In order to answer this question, we first undertook normality testing. In principle, statistical testing to evaluate the data depend on the sample size. For small sample sizes, the normality of the distribution is also an important factor. The sample sizes here can be considered large (\>200), therefore normality testing is not strictly necessary. However, for completeness (and didactic purposes) we undertake normality testing, first using QQ-Plots, and then using the Shapiro-Wilk Test. This was coded as follows:
+
+### QQ-Plots
+
+```{r}
+#QQplot - to visually assess normality
+
+qf <- qqnorm(dat$FEV1[dat$sex=="f"], pch = 1, frame = FALSE, main = "Normal Q-Q Plot \nFEV1 in Females")
+qf <- qqline(dat$FEV1[dat$sex=="f"], col = "steelblue", lwd = 2)
+
+qm <- qqnorm(dat$FEV1[dat$sex=="m"], pch = 1, frame = FALSE,  main = "Normal Q-Q Plot \nFEV1 in Males")
+qm <- qqline(dat$FEV1[dat$sex=="m"], col = "steelblue", lwd = 2)
+```
+
+The QQ-plot for data from the female sample (top) appears to be light tailed, with right skew. The male data (bottom) is more congruent with a normal distribution.
+
+### Shapiro-Wilk Test
+
+```{r}
+#Shapiro Wilk
+datfev1m <- select(filter(dat, sex == "m"),FEV1)
+datfev1f <- select(filter(dat, sex == "f"),FEV1)
+str(datfev1f)
+
+shapiro.test(datfev1f$FEV1)
+shapiro.test(datfev1m$FEV1)
+shapiro.test(dat$FEV1)
+```
+
+The Shapiro-Wilk test for females produced a p-value of 0.04. For males, the p-value was 0.45. The Shapiro-Wilk test provides evidence in favor of a normal distribution for FEV1 data for males (p \> 0.05). However, there is evidence against normality for FEV1 in females (p \< 0.05). This is also in agreement with the QQ-plots above. Given the sample size here is large (\>300) for both male and female groups, we proceeded nonetheless to a two-sample T-test. For a T-test to be appropriate, either:
+
+1\. the data must be normally distributed (for small sample sizes), or,
+
+2\. the sample is must be large (this sample is large, i.e. \>200).
+
+Therefore, we have used the two-sample T-test here because the sample size is large and deviation from normality is not severe.
+
+### Two-sample T-test
+
+```{r}
+t.test(FEV1~sex, data = dat)
+```
+
+The two sample T-test provides a p-value of 7.699e-07, with a confidence interval of -0.17, -0.07. The T-test provides strong evidence against the null hypothesis that there is no difference between male and female FEV1. Therefore, this evidence suggests that FEV1 is higher in males than females in this population. It is important to note that age would likely have an effect on FEV1. Since the mean and median age of males and females in this study were similar, it was assumed that this was already taken into account in the original study design. Therefore, no further statistical testing was undertaken on the age variable.
+
+### Chi-squared test
+
+Our second and third research questions aimed to assess whether presence of respiratory symptoms is associated with sex, or with history of asthma, respectively. We assessed this using the Chi-squared test, coded as follows:
+
+```{r}
+#Testing proportions, answering the question: is presence of respiratory symptoms associated with sex?
+table(dat$respsymptoms,dat$sex)
+chisq.test(dat$respsymptoms,dat$sex)
+#Testing proportions, answering the question: is presence of respiratory symptoms associated with asthma history?
+table(dat$respsymptoms,dat$asthma_hist)
+chisq.test(dat$asthma_hist,dat$respsymptoms)
+```
+
+The Chi-squared test provided a p-value of 0.435 for the association between sex and reporting of respiratory signs, and 0.121 for the association between history of asthma and reporting of respiratory signs. In both cases, there is insufficient evidence to reject the null hypothesis (p \> 0.05). Therefore, neither sex nor history of asthma seem to have an effect on whether or not respiratory symptoms are reported.
+
+## Conclusions
+
+In our study, FEV1 was higher in males than in females. There was no significant association between sex or history of asthma on whether respiratory symptoms were reported.
